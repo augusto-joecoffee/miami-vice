@@ -10,7 +10,7 @@ const nl = process.platform === 'win32' ? '\r\n' : '\n';
 
 const emojiLog = {
     fatal: '💀',
-    error: '🚨',
+    error: '💥',
     warn: '⚠️',
     info: '✨',
     debug: '🐛',
@@ -18,11 +18,11 @@ const emojiLog = {
 };
 
 const emojiMark = {
-    error: '🧨',
-    stack: '💥',
+    error: '',
+    stack: '',
 };
 
-const indentMark = chalk.gray('|');
+const indentMark = chalk.gray('');
 
 const anynl = /\r?\n/;
 
@@ -123,23 +123,7 @@ function MiamiVice() {
 
         let err = extract(obj, 'err', 'error');
         let trace = extract(obj, 'trace', 'stack');
-
         let detailLines = [];
-
-        if (level !== 'info') {
-            const details = yaml.safeDump(obj, {skipInvalid: true, flowLevel: 0}).trimEnd();
-            if (details.length < 160) {
-                output.push(chalk.gray(details));
-            }
-            else {
-                detailLines = yaml.safeDump(obj, {skipInvalid: true})
-                    .split(anynl)
-                    .filter(noEmpty)
-                    .map(indent)
-                    .map((line) => chalk.gray(line));
-            }
-        }
-
         let lines = [output.filter(noEmpty).join(' '), ...detailLines];
 
         if (err) {
@@ -160,13 +144,7 @@ function MiamiVice() {
 
         const errNameMatch = trace.match(errorNameRegex);
         let errName = 'Error';
-        if (errNameMatch) {
-            errName = errNameMatch[1];
-            if (errName === err.type) {
-                extract(err, 'type');
-            }
-        }
-        
+
         if (err.name === errName) {
             extract(err, 'name');
         }
@@ -176,11 +154,9 @@ function MiamiVice() {
         if (msg && msg.includes(err.msg)) {
             extract(err, 'msg');
         }
-        
-        const errLines = yaml.safeDump(err, { skipInvalid: true })
-            .split(anynl).map(errLine => '   ' + errLine);
-        errLines.unshift(`${formatMark(emojiMark.error)} ${errName}:`);
 
+        const errLines = yaml.safeDump(err, { skipInvalid: true })
+            .split(anynl).map(errLine => ' ' + errLine.charAt(0).toUpperCase() + errLine.slice(1));
         return errLines
             .filter(errLine => errLine.trim())
             .map(indent);
@@ -232,7 +208,7 @@ function MiamiVice() {
     }
 
     function formatMessage(message, level) {
-        const msg = formatMessageName(message);
+        const msg = formatMessageName(message).charAt(0).toUpperCase() + formatMessageName(message).slice(1) ;
         let pretty;
         if (level === 'error') pretty = chalk.red(msg);
         if (level === 'trace') pretty = chalk.white(msg);
@@ -246,7 +222,7 @@ function MiamiVice() {
             return pretty;
         }
 
-        return [lines[0], ...lines.slice(1).map(indentPlus)].join(nl);
+        return [lines[0], ...lines.slice(1).map(indentPlus)].join(nl).charAt(0).toLocaleUpperCase();
     }
 
     function indent(line) {
